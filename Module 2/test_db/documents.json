@@ -1,0 +1,14 @@
+{
+  "documents": {
+    "doc1": "Hello world",
+    "doc2": "Python is great"
+  },
+  "metadata": {
+    "doc1": {
+      "source": "document"
+    },
+    "doc2": {
+      "source": "document"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "documents": {
+    "password_reset": "How to reset your password: Go to login page, click Forgot Password, enter email, check email for link, click link and create new password",
+    "server_status": "Server maintenance every Tuesday 2-4 AM UTC. Check status.example.com for incidents",
+    "api_rate_limit": "API rate limit is 100 requests per minute. Use Bearer token in Authorization header"
+  },
+  "metadata": {
+    "password_reset": {
+      "category": "account",
+      "type": "faq",
+      "priority": "high"
+    },
+    "server_status": {
+      "category": "infrastructure",
+      "type": "maintenance",
+      "priority": "medium"
+    },
+    "api_rate_limit": {
+      "category": "api",
+      "type": "limit",
+      "priority": "high"
+    }
+  }
+}
