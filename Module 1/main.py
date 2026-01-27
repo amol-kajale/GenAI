@@ -9,6 +9,7 @@ from pydantic import BaseModel
 import requests
 
 from dotenv import load_dotenv
+from prompts import get_analysis_prompt, parse_json_response, validate_analysis_response
 
 # Load .env if present
 load_dotenv()
@@ -104,11 +105,14 @@ def ask(req: AskRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail="HF_TOKEN or HUGGINGFACE_API_KEY not set in environment")
 
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-    print("Question:", req.question, "Model:", model, "Headers:", headers)
+    
+    # Generate prompt that requests JSON response with intent and priority
+    analysis_prompt = get_analysis_prompt(req.question)
+    
     # Router expects OpenAI-like chat completions payload
     payload = {
         "messages": [
-            {"role": "user", "content": req.question}
+            {"role": "user", "content": analysis_prompt}
         ],
         "model": model
     }
@@ -123,16 +127,28 @@ def ask(req: AskRequest) -> Dict[str, Any]:
     latency_ms = (time.time() - start) * 1000.0
 
     # Parse response similar to OpenAI router-style response
-    answer = ""
+    answer_text = ""
     try:
         # expected shape: { choices: [ { message: { content: "..." } } ], usage: {...} }
-        answer = data.get("choices", [])[0].get("message", {}).get("content", "")
+        answer_text = data.get("choices", [])[0].get("message", {}).get("content", "")
     except Exception:
         # fallback: try other common fields
         if isinstance(data, list) and len(data) > 0:
-            answer = data[0].get("generated_text", "")
+            answer_text = data[0].get("generated_text", "")
         else:
-            answer = str(data)
+            answer_text = str(data)
+
+    # Parse the JSON response from LLM
+    parsed_response = parse_json_response(answer_text)
+    
+    if not parsed_response or not validate_analysis_response(parsed_response):
+        # Fallback to structured response if LLM didn't return valid JSON
+        parsed_response = {
+            "answer": answer_text,
+            "intent": "information",
+            "priority": "medium",
+            "confidence": 0.5
+        }
 
     # Try to read usage if present
     usage = data.get("usage") if isinstance(data, dict) else None
@@ -145,8 +161,8 @@ def ask(req: AskRequest) -> Dict[str, Any]:
         }
     else:
         # fallback estimate
-        prompt_tokens = estimate_tokens(req.question)
-        completion_tokens = estimate_tokens(answer)
+        prompt_tokens = estimate_tokens(analysis_prompt)
+        completion_tokens = estimate_tokens(answer_text)
         tokens_info = {
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
@@ -156,61 +172,15 @@ def ask(req: AskRequest) -> Dict[str, Any]:
 
     estimated_cost = estimate_cost(tokens_info["prompt_tokens"], tokens_info["completion_tokens"])
 
-    # Build structured response expected by the caller
-    def _extract_summary(text: str) -> str:
-        if not text:
-            return ""
-        # naive sentence splitter
-        for sep in ['. ', '? ', '! ']:
-            if sep in text:
-                parts = text.split(sep)
-                first = parts[0].strip()
-                # return first sentence, appended with a period if missing
-                return first + ('.' if not first.endswith(('.', '!', '?')) else '')
-        # fallback: return up to 160 chars
-        return (text[:160] + '...') if len(text) > 160 else text
+    structured_answer = {
+        "summary": parsed_response.get("answer", ""),
+        "intent": parsed_response.get("intent", "information"),
+        "priority": parsed_response.get("priority", "medium"),
+    }
 
-    def _classify_intent(question: str, answer_text: str) -> str:
-        q = (question or "").lower()
-        keywords_high = ["urgent", "asap", "immediately", "error", "fail", "down", "outage"]
-        keywords_medium = ["how", "configure", "setup", "help", "install", "deploy", "guide", "performance"]
-        keywords_low = ["idea", "recommend", "suggest", "info", "what is", "explain"]
-
-        for k in keywords_high:
-            if k in q:
-                return "incident"
-        for k in keywords_medium:
-            if k in q:
-                return "support"
-        for k in keywords_low:
-            if k in q:
-                return "information"
-        # fallback: infer from answer
-        a = (answer_text or "").lower()
-        if any(x in a for x in ["error", "stacktrace", "exception"]):
-            return "incident"
-        if len(a) < 50:
-            return "information"
-        return "support"
-
-    def _priority_from_intent(intent_label: str, question: str) -> str:
-        if intent_label == "incident":
-            return "high"
-        if intent_label == "support":
-            # if question contains "urgent" escalate
-            if any(x in (question or "").lower() for x in ["urgent", "now", "asap"]):
-                return "high"
-            return "medium"
-        return "low"
-
-    def _confidence(answer_text: str, intent_label: str) -> float:
-        score = 0.5
-        if answer_text:
-            score += 0.25
-        if intent_label in ("incident", "support"):
-            score += 0.15
-        return min(1.0, round(score, 2))
-
+    confidence = float(parsed_response.get("confidence", 0.5))
+    
+    # Suggest actions based on intent
     def _suggest_actions(intent_label: str) -> list:
         if intent_label == "incident":
             return [
@@ -229,15 +199,6 @@ def ask(req: AskRequest) -> Dict[str, Any]:
             "Offer examples and further reading",
         ]
 
-    structured_answer = {
-        "summary": _extract_summary(answer),
-        "intent": _classify_intent(req.question, answer),
-        "priority": "medium",
-    }
-
-    structured_answer["priority"] = _priority_from_intent(structured_answer["intent"], req.question)
-
-    confidence = _confidence(answer, structured_answer["intent"])
     actions = _suggest_actions(structured_answer["intent"])
 
     response = {

@@ -5,3 +5,10 @@ timestamp,question,model,latency_ms,prompt_tokens,completion_tokens,total_tokens
 2025-12-19T11:55:12.146051,How to learn genAI,openai/gpt-oss-20b:groq,4644.5,76,2545,2621,0.0,support,medium,0.9
 2025-12-19T11:57:36.359088,Add my all contanst in .env file,openai/gpt-oss-20b:groq,3075.64,80,1159,1239,0.0,support,medium,0.9
 2025-12-19T12:01:35.049397,Add my all contanst in .env file,openai/gpt-oss-20b:groq,2886.95,80,752,832,0.0,support,medium,0.9
+2026-01-27T06:19:02.267637,What is AI?,openai/gpt-oss-20b:groq,1160.52,314,369,683,0.0,information,low,0.9
+2026-01-27T06:19:02.404418,What is AI?,openai/gpt-oss-20b:groq,0.09,10,5,15,0.0,information,medium,0.8
+2026-01-27T06:19:02.414428,urgent error down,openai/gpt-oss-20b:groq,0.08,5,3,8,0.0,incident,high,0.95
+2026-01-27T06:19:34.199090,What is AI?,openai/gpt-oss-20b:groq,0.11,10,5,15,0.0,information,medium,0.8
+2026-01-27T06:19:34.207618,urgent error down,openai/gpt-oss-20b:groq,0.08,5,3,8,0.0,incident,high,0.95
+2026-01-27T06:26:55.197679,Add my all contanst in .env file,openai/gpt-oss-20b:groq,2325.88,320,651,971,0.0,support,medium,0.9
+2026-01-27T06:27:23.880930,What is capital of India,openai/gpt-oss-20b:groq,1860.48,316,452,768,0.0,information,low,0.9
