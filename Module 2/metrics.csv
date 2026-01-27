@@ -17,3 +17,7 @@ timestamp,question,model,latency_ms,prompt_tokens,completion_tokens,total_tokens
 2026-01-27T09:41:54.839275,What is capital of India,openai/gpt-oss-20b:groq,1354.47,316,246,562,0.0,information,low,0.9,False,0
 2026-01-27T10:05:33.702740,What is capital of India,openai/gpt-oss-20b:groq,1375.64,400,157,557,0.0,information,low,0.9,True,3
 2026-01-27T10:05:43.305054,What is capital of India,openai/gpt-oss-20b:groq,1457.81,400,231,631,0.0,information,low,0.9,True,3
+2026-01-27T10:07:32.802966,How to reset password,openai/gpt-oss-20b:groq,1528.04,399,209,608,0.0,support,medium,0.9,True,3
+2026-01-27T10:07:45.925053,What is capital of India,openai/gpt-oss-20b:groq,1904.31,400,317,717,0.0,information,low,0.9,True,3
+2026-01-27T10:07:59.398900,How to reset password,openai/gpt-oss-20b:groq,1482.48,399,386,785,0.0,support,medium,0.9,True,3
+2026-01-27T10:08:25.670443,How to delete profile on linkedin,openai/gpt-oss-20b:groq,1611.54,401,341,742,0.0,support,medium,0.9,True,3
